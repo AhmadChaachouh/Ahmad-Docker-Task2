@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from minio import Minio
 from minio.error import S3Error
 import os
+import io
 
 app = Flask(__name__)
 
@@ -18,10 +19,12 @@ bucket_name = "mybucket"
 def store():
     data = request.json
     object_name = data.get("name")
-    content = data.get("content")
+    content = data.get("content").encode('utf-8')  # Encode the string content to bytes
 
     try:
-        minio_client.put_object(bucket_name, object_name, content, len(content))
+        # Convert the string content to a file-like object
+        content_io = io.BytesIO(content)
+        minio_client.put_object(bucket_name, object_name, content_io, len(content))
         return jsonify({"message": "Data stored successfully"}), 200
     except S3Error as e:
         return jsonify({"error": str(e)}), 500
